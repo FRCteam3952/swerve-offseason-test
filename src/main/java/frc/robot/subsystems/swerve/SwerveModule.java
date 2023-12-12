@@ -21,6 +21,9 @@ public class SwerveModule {
     private static final double MODULE_MAX_ANGULAR_VELOCITY = DriveTrainSubsystem.MAX_ANGULAR_SPEED;
     private static final double MODULE_MAX_ANGULAR_ACCELERATION = 2 * Math.PI; // radians per second squared
 
+    private static final double SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED = 0.3;
+    private static final double SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED = -0.3;
+
     private final CANSparkMax driveMotor;
     private final CANSparkMax turningMotor;
 
@@ -89,6 +92,15 @@ public class SwerveModule {
         return new SwerveModulePosition(driveEncoder.getPosition(), new Rotation2d(turningEncoder.getPosition()));
     }
 
+    public void setVoltages(double driveVoltage, double turnVoltage) {
+        driveMotor.setVoltage(driveVoltage);
+        turningMotor.setVoltage(turnVoltage);
+    }
+
+    public void stop() {
+        setVoltages(0, 0);
+    }
+
     /**
      * Sets the desired state for the module.
      *
@@ -97,7 +109,6 @@ public class SwerveModule {
     public void setDesiredState(SwerveModuleState desiredState) {
         // Optimize the reference state to avoid spinning further than 90 degrees
         SwerveModuleState state = SwerveModuleState.optimize(desiredState, new Rotation2d(turningEncoder.getPosition()));
-
 
         // Calculate the drive output from the drive PID controller.
         final double driveOutput = drivePIDController.calculate(driveEncoder.getVelocity(), state.speedMetersPerSecond);
@@ -108,8 +119,9 @@ public class SwerveModule {
         final double turnOutput = turningPIDController.calculate(turningEncoder.getPosition(), state.angle.getRadians());
 
         final double turnFeedforward = this.turnFeedforward.calculate(turningPIDController.getSetpoint().velocity);
-
-        driveMotor.setVoltage(driveOutput + driveFeedforward);
-        turningMotor.setVoltage(turnOutput + turnFeedforward);
+        System.out.println("drive output: " + (driveOutput + driveFeedforward));
+        System.out.println("turn output: " + (turnOutput + turnFeedforward));
+        //driveMotor.setVoltage(MathUtil.clamp(driveOutput + driveFeedforward, SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED, SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED));
+        //turningMotor.setVoltage(MathUtil.clamp(turnOutput + turnFeedforward, SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED, SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED));
     }
 }

@@ -4,12 +4,18 @@
 
 package frc.robot.subsystems.swerve;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.*;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.RobotConstants;
 import frc.robot.subsystems.staticsubsystems.RobotGyro;
 import frc.robot.Constants.PortConstants;
 
@@ -22,10 +28,10 @@ public class DriveTrainSubsystem extends SubsystemBase {
 
 
     // Location of each swerve drive, relative to motor center. +X -> moving to front of robot, +Y -> moving to left of robot. IMPORTANT.
-    private final Translation2d frontLeftLocation = new Translation2d(0.381, 0.381);
-    private final Translation2d frontRightLocation = new Translation2d(0.381, -0.381);
-    private final Translation2d backLeftLocation = new Translation2d(-0.381, 0.381);
-    private final Translation2d backRightLocation = new Translation2d(-0.381, -0.381);
+    private final Translation2d frontLeftLocation = new Translation2d(RobotConstants.LEG_LENGTHS_M, RobotConstants.LEG_LENGTHS_M);
+    private final Translation2d frontRightLocation = new Translation2d(RobotConstants.LEG_LENGTHS_M, -RobotConstants.LEG_LENGTHS_M);
+    private final Translation2d backLeftLocation = new Translation2d(-RobotConstants.LEG_LENGTHS_M, RobotConstants.LEG_LENGTHS_M);
+    private final Translation2d backRightLocation = new Translation2d(-RobotConstants.LEG_LENGTHS_M, -RobotConstants.LEG_LENGTHS_M);
 
     private final SwerveModule frontLeft = new SwerveModule(
             PortConstants.FRONT_LEFT_DRIVE_MOTOR_ID,
@@ -58,6 +64,10 @@ public class DriveTrainSubsystem extends SubsystemBase {
                     backRight.getPosition()
     });
 
+    public Pose2d getPose() {
+        return odometry.getPoseMeters();
+    }
+
     public DriveTrainSubsystem() {
         RobotGyro.resetGyroAngle();
     }
@@ -77,6 +87,37 @@ public class DriveTrainSubsystem extends SubsystemBase {
         frontRight.setDesiredState(swerveModuleStates[1]);
         backLeft.setDesiredState(swerveModuleStates[2]);
         backRight.setDesiredState(swerveModuleStates[3]);
+    }
+
+    public void consumeRawModuleStates(SwerveModuleState[] states) {
+        frontLeft.setDesiredState(states[0]);
+        frontRight.setDesiredState(states[1]);
+        backLeft.setDesiredState(states[2]);
+        backRight.setDesiredState(states[3]);
+    }
+
+    public void stop() {
+        this.frontLeft.stop();
+        this.frontRight.stop();
+        this.backLeft.stop();
+        this.backRight.stop();
+    }
+
+    public Command generateTrajectoryFollowerCommand(Trajectory trajectory, boolean stopOnEnd) {
+        return new SwerveControllerCommand(
+            trajectory,
+            this::getPose,
+            this.kinematics,
+            new PIDController(DriveConstants.TRAJ_X_CONTROLLER_KP, 0, 0),
+            new PIDController(DriveConstants.TRAJ_Y_CONTROLLER_KP, 0, 0),
+            new ProfiledPIDController(DriveConstants.TRAJ_THETA_CONTROLLER_KP, 0, 0, new TrapezoidProfile.Constraints(DriveConstants.TRAJ_MAX_ANG_VELO, DriveConstants.TRAJ_MAX_ANG_ACCEL)),
+            this::consumeRawModuleStates,
+            this
+        ).andThen(() -> {
+            if (stopOnEnd) {
+                drive(0, 0, 0, false);
+            }
+        });
     }
 
     /**

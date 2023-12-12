@@ -24,14 +24,23 @@ public final class Constants {
     }
 
     public static class DriveConstants {
-
+        public static final double TRAJ_X_CONTROLLER_KP = 0;
+        public static final double TRAJ_Y_CONTROLLER_KP = 0;
+        public static final double TRAJ_THETA_CONTROLLER_KP = 0;
+        public static final double TRAJ_MAX_ANG_VELO = 0;
+        public static final double TRAJ_MAX_ANG_ACCEL = 0;
     }
 
     public static class RobotConstants {
         public static final double SIDE_LENGTH_INCHES = 30; // square
 
         public static final double DIAGONAL_LENGTH_INCHES = Math.sqrt(2) * SIDE_LENGTH_INCHES;
+        public static final double DIAGONAL_LENGTH_CM = DIAGONAL_LENGTH_INCHES * 2.54;
         public static final double SWERVE_MODULE_INSET_FROM_CORNER_CM = 9; // CM
+
+        public static final double SWERVE_MODULE_DIST_FROM_MIDDLE_CM = DIAGONAL_LENGTH_CM - SWERVE_MODULE_INSET_FROM_CORNER_CM;
+        public static final double LEG_LENGTHS_CM = SWERVE_MODULE_DIST_FROM_MIDDLE_CM / Math.sqrt(2);
+        public static final double LEG_LENGTHS_M = LEG_LENGTHS_CM / 100;
     }
 
     private Constants() {

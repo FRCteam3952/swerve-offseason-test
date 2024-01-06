@@ -16,6 +16,7 @@ public class RobotContainer {
     public RobotContainer() {
         configureBindings();
 
+        // Initialize static subsystems (this is a Java thing don't worry about it just copy it so that static blocks run on startup)
         LimeLight.poke();
         RobotGyro.poke();
     }

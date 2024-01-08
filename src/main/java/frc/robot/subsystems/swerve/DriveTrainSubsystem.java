@@ -36,23 +36,29 @@ public class DriveTrainSubsystem extends SubsystemBase {
     private final SwerveModule frontLeft = new SwerveModule(
             PortConstants.FRONT_LEFT_DRIVE_MOTOR_ID,
             PortConstants.FRONT_LEFT_ROTATION_MOTOR_ID,
-            PortConstants.FRONT_LEFT_ROTATION_CANCODER_ID
+            PortConstants.FRONT_LEFT_ROTATION_CANCODER_ID,
+            "frontLeft"
     );
     private final SwerveModule frontRight = new SwerveModule(
             PortConstants.FRONT_RIGHT_DRIVE_MOTOR_ID,
             PortConstants.FRONT_RIGHT_ROTATION_MOTOR_ID,
-            PortConstants.FRONT_RIGHT_ROTATION_CANCODER_ID
+            PortConstants.FRONT_RIGHT_ROTATION_CANCODER_ID,
+            "frontRight"
     );
     private final SwerveModule backLeft = new SwerveModule(
             PortConstants.BACK_LEFT_DRIVE_MOTOR_ID,
             PortConstants.BACK_LEFT_ROTATION_MOTOR_ID,
-            PortConstants.BACK_LEFT_ROTATION_CANCODER_ID
+            PortConstants.BACK_LEFT_ROTATION_CANCODER_ID,
+            "backLeft"
     );
     private final SwerveModule backRight = new SwerveModule(
             PortConstants.BACK_RIGHT_DRIVE_MOTOR_ID,
             PortConstants.BACK_RIGHT_ROTATION_MOTOR_ID,
-            PortConstants.BACK_RIGHT_ROTATION_CANCODER_ID
+            PortConstants.BACK_RIGHT_ROTATION_CANCODER_ID,
+            "backRight"
     );
+
+    private final SwerveModule[] swerveModules = {frontLeft, frontRight, backLeft, backRight};
 
     private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(frontLeftLocation, frontRightLocation, backLeftLocation, backRightLocation);
 
@@ -81,12 +87,22 @@ public class DriveTrainSubsystem extends SubsystemBase {
      * @param fieldRelative Whether the provided x and y speeds are relative to the field.
      */
     public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
+        // System.out.println("targets: x: " + xSpeed + " y: " + ySpeed + " rot: " + rot);
         var swerveModuleStates = kinematics.toSwerveModuleStates(fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, RobotGyro.getRotation2d()) : new ChassisSpeeds(xSpeed, ySpeed, rot));
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, MAX_SPEED);
         frontLeft.setDesiredState(swerveModuleStates[0]);
         frontRight.setDesiredState(swerveModuleStates[1]);
         backLeft.setDesiredState(swerveModuleStates[2]);
         backRight.setDesiredState(swerveModuleStates[3]);
+    }
+
+    public void drive(double speed) { // INCHES: 10 rot ~= 18.25, ~ 9 rot ~= 15.75
+        if(Math.abs(speed) - 0.05 > 0) {
+        frontLeft.drive(speed);
+        frontRight.drive(speed + 0.05);
+        backLeft.drive(speed);
+        backRight.drive(speed + 0.05);
+        }
     }
 
     public void consumeRawModuleStates(SwerveModuleState[] states) {
@@ -101,6 +117,14 @@ public class DriveTrainSubsystem extends SubsystemBase {
         this.frontRight.stop();
         this.backLeft.stop();
         this.backRight.stop();
+    }
+    
+    @Override
+    public void periodic() {
+        for(SwerveModule module : swerveModules) {
+            System.out.println(module.getName() + " " + module.getDriveRotations());
+            // System.out.println(module.getName() + " " + module.getPosition());
+        }
     }
 
     public Command generateTrajectoryFollowerCommand(Trajectory trajectory, boolean stopOnEnd) {

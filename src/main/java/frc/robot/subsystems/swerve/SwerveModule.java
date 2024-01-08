@@ -9,6 +9,8 @@ import com.ctre.phoenix.sensors.SensorTimeBase;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -16,13 +18,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.util.Units;
 
 public class SwerveModule {
     private static final double MODULE_MAX_ANGULAR_VELOCITY = DriveTrainSubsystem.MAX_ANGULAR_SPEED;
     private static final double MODULE_MAX_ANGULAR_ACCELERATION = 2 * Math.PI; // radians per second squared
 
-    private static final double SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED = 0.3;
-    private static final double SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED = -0.3;
+    private static final double SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED = 6;
+    private static final double SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED = -6;
 
     private final CANSparkMax driveMotor;
     private final CANSparkMax turningMotor;
@@ -30,16 +33,18 @@ public class SwerveModule {
     private final RelativeEncoder driveEncoder;
     private final CANCoder turningEncoder;
 
-    // Gains are for example purposes only - must be determined for your own robot!
-    private final PIDController drivePIDController = new PIDController(1, 0, 0);
+    private final String name;
 
     // Gains are for example purposes only - must be determined for your own robot!
-    private final ProfiledPIDController turningPIDController = new ProfiledPIDController(1, 0, 0,
+    private final PIDController drivePIDController = new PIDController(0.4, 0, 0);
+
+    // Gains are for example purposes only - must be determined for your own robot!
+    private final ProfiledPIDController turningPIDController = new ProfiledPIDController(0.2, 0, 0,
             new TrapezoidProfile.Constraints(MODULE_MAX_ANGULAR_VELOCITY, MODULE_MAX_ANGULAR_ACCELERATION));
 
     // Gains are for example purposes only - must be determined for your own robot!
-    private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(1, 3);
-    private final SimpleMotorFeedforward turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
+    private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0, 0);
+    private final SimpleMotorFeedforward turnFeedforward = new SimpleMotorFeedforward(0, 0);
 
     /**
      * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
@@ -48,12 +53,20 @@ public class SwerveModule {
      * @param turningMotorCANID    CAN ID for the turning motor.
      * @param turningEncoderCANID DIO input for the turning encoder channel A
      */
-    public SwerveModule(int driveMotorCANID, int turningMotorCANID, int turningEncoderCANID) {
+    public SwerveModule(int driveMotorCANID, int turningMotorCANID, int turningEncoderCANID, String name) {
         driveMotor = new CANSparkMax(driveMotorCANID, MotorType.kBrushless);
         turningMotor = new CANSparkMax(turningMotorCANID, MotorType.kBrushless);
-
+        this.name = name;
         driveEncoder = driveMotor.getEncoder();
         turningEncoder = new CANCoder(turningEncoderCANID);
+
+        // Circumference / Gear Ratio (L2 of MK4i). This evaluates to ~1.86 inches/rotation, which is close to experimental values.
+        // We are therefore using the calculated value. (Thanks Ivan)
+        // Since everything else is in meters, convert to meters.
+        this.driveEncoder.setPositionConversionFactor(Units.inchesToMeters(4 * Math.PI / 6.75));
+        this.driveEncoder.setVelocityConversionFactor(Units.inchesToMeters(4 * Math.PI / 6.75));
+
+        this.driveEncoder.setPosition(0);
 
         // Set the distance per pulse for the drive encoder. We can simply use the
         // distance traveled for one rotation of the wheel divided by the encoder
@@ -72,6 +85,14 @@ public class SwerveModule {
         // Limit the PID Controller's input range between -pi and pi and set the input
         // to be continuous.
         turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public double getDriveRotations() {
+        return this.driveEncoder.getPosition();
     }
 
     /**
@@ -119,9 +140,14 @@ public class SwerveModule {
         final double turnOutput = turningPIDController.calculate(turningEncoder.getPosition(), state.angle.getRadians());
 
         final double turnFeedforward = this.turnFeedforward.calculate(turningPIDController.getSetpoint().velocity);
-        System.out.println("drive output: " + (driveOutput + driveFeedforward));
-        System.out.println("turn output: " + (turnOutput + turnFeedforward));
-        //driveMotor.setVoltage(MathUtil.clamp(driveOutput + driveFeedforward, SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED, SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED));
-        //turningMotor.setVoltage(MathUtil.clamp(turnOutput + turnFeedforward, SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED, SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED));
+        System.out.println(this.name + " velocity: " + driveEncoder.getVelocity() + ", target speed " + state.speedMetersPerSecond);
+        // System.out.println(this.name + " drive output: " + (driveOutput + driveFeedforward));
+        // System.out.println("turn output: " + (turnOutput + turnFeedforward));
+        // driveMotor.setVoltage(MathUtil.clamp(driveOutput + driveFeedforward, SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED, SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED));
+        // turningMotor.setVoltage(MathUtil.clamp(turnOutput + turnFeedforward, SWERVE_MODULE_PLS_NO_EXPLODE_MIN_SPEED, SWERVE_MODULE_PLS_NO_EXPLODE_MAX_SPEED));
+    }
+
+    public void drive(double speed) {
+        this.driveMotor.set(speed);
     }
 }

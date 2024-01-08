@@ -2,24 +2,41 @@ package frc.robot;
 
 public final class Constants {
     public static class OperatorConstants {
-        public static final int RIGHT_JOYSTICK_PORT = 1;
+        public static final int RIGHT_JOYSTICK_PORT = 0;
         public static class ControllerConstants {
         }
     }
 
+    /**
+     * Key: RIO = RoboRio, COD = CANCoder, DRI = Drive Motor, ROT = Rotation Motor
+     * USED:
+     * 0  (RIO)
+     * 1  (COD)
+     * 2  (DRI)
+     * 3  (COD)
+     * 4  (DRI)
+     * 5  (ROT)
+     * 6  (COD)
+     * 7  (ROT)
+     * 8  (DRI)
+     * 9  (DRI)
+     * 10 (ROT)
+     * 11 (ROT)
+     * 12 (COD)
+     */
     public static class PortConstants {
-        public static final int FRONT_LEFT_DRIVE_MOTOR_ID           = 0;
-        public static final int FRONT_RIGHT_DRIVE_MOTOR_ID          = 0;
-        public static final int BACK_LEFT_DRIVE_MOTOR_ID            = 0;
-        public static final int BACK_RIGHT_DRIVE_MOTOR_ID           = 0;
-        public static final int FRONT_LEFT_ROTATION_MOTOR_ID        = 0;
-        public static final int FRONT_RIGHT_ROTATION_MOTOR_ID       = 0;
-        public static final int BACK_LEFT_ROTATION_MOTOR_ID         = 0;
-        public static final int BACK_RIGHT_ROTATION_MOTOR_ID        = 0;
-        public static final int FRONT_LEFT_ROTATION_CANCODER_ID     = 0;
-        public static final int FRONT_RIGHT_ROTATION_CANCODER_ID    = 0;
-        public static final int BACK_LEFT_ROTATION_CANCODER_ID      = 0;
-        public static final int BACK_RIGHT_ROTATION_CANCODER_ID     = 0;
+        public static final int FRONT_LEFT_DRIVE_MOTOR_ID           = 2;
+        public static final int FRONT_RIGHT_DRIVE_MOTOR_ID          = 4;
+        public static final int BACK_LEFT_DRIVE_MOTOR_ID            = 9;
+        public static final int BACK_RIGHT_DRIVE_MOTOR_ID           = 8;
+        public static final int FRONT_LEFT_ROTATION_MOTOR_ID        = 10;
+        public static final int FRONT_RIGHT_ROTATION_MOTOR_ID       = 5;
+        public static final int BACK_LEFT_ROTATION_MOTOR_ID         = 11;
+        public static final int BACK_RIGHT_ROTATION_MOTOR_ID        = 7;
+        public static final int FRONT_LEFT_ROTATION_CANCODER_ID     = 12;
+        public static final int FRONT_RIGHT_ROTATION_CANCODER_ID    = 3;
+        public static final int BACK_LEFT_ROTATION_CANCODER_ID      = 6;
+        public static final int BACK_RIGHT_ROTATION_CANCODER_ID     = 1;
 
     }
 

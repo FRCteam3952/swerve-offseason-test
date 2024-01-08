@@ -21,7 +21,8 @@ public class ManualDrive extends CommandBase {
 
     @Override
     public void execute() {
-        this.driveTrain.drive(this.joystick.getVerticalMovement(), this.joystick.getHorizontalMovement(), this.joystick.getRotation(), true);
+        this.driveTrain.drive(this.joystick.getVerticalMovement());
+        // this.driveTrain.drive(this.joystick.getVerticalMovement(), this.joystick.getHorizontalMovement(), this.joystick.getRotation(), false);
     }
 
     // Called once the command ends or is interrupted.

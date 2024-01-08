@@ -3,7 +3,6 @@ package frc.robot.util;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.*;
-import edu.wpi.first.wpilibj.Timer;
 import frc.robot.subsystems.staticsubsystems.RobotGyro;
 
 import java.util.HashMap;
